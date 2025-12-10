@@ -1,0 +1,17 @@
+{
+  "name": "tailwind-base",
+  "version": "1.0.0",
+  "description": "Reusable TailwindCSS setup",
+  "scripts": {
+    "build": "npx tailwindcss -i ./static/css/input.css -o ./static/css/style.css --minify",
+    "watch": "npx tailwindcss -i ./static/css/input.css -o ./static/css/style.css --watch",
+    "serve": "npx http-server .",
+    "dev": "concurrently \"npm run watch\" \"npx nodemon --watch ./static --ext html,css,js --exec \\\"npx http-server . -p 8080\\\"\""
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.14",
+    "http-server": "^14.1.1",
+    "nodemon": "^3.0.3",
+    "concurrently": "^8.2.0"
+  }
+}
