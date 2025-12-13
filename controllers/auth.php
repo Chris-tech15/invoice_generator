@@ -9,28 +9,44 @@
  */
 
 // Load the database configuration
-require_once __DIR__ . '/../config/db.php';
+session_start();
+require_once __DIR__ . '/../config/db.php'; // your PDO connection
 
-// Login logic
-function login($username, $password, $companycode) {
-    global $pdo;
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    // Verify user credentials against the database
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ? AND password = ? AND company_code = ?");
-    $stmt->bind_param("ss", $username, $password, $companycode);
-    $stmt->execute();
-    $result = $stmt->get_result();
+    $username     = $_POST['username'] ?? '';
+    $password     = $_POST['password'] ?? '';
+    $company_code = $_POST['company_code'] ?? '';
 
-    if ($result->num_rows > 0) {
-        // Start user session
-        session_start();
-        $_SESSION['username'] = $username;
+    // 1) Find the company first
+    $stmt = $pdo->prepare("SELECT * FROM companies WHERE company_code = ?");
+    $stmt->execute([$company_code]);
+    $company = $stmt->fetch();
 
-        // Redirect to dashboard in resources/dashboard.php
-        header("Location: /resources/dashboard.php");
-        exit();
-    } else {
-        // Return errormessage to be displayed on login page
-        return "Invalid credentials. Please try again.";
+    if (!$company) {
+        die("Company not found!");
     }
+
+    // 2) Find the user in that company
+    $stmt = $pdo->prepare("SELECT * FROM company_users WHERE company_id = ? AND username = ?");
+    $stmt->execute([$company['id'], $username]);
+    $user = $stmt->fetch();
+
+    if (!$user) {
+        die("User not found!");
+    }
+
+    // 3) Verify password
+    if (!password_verify($password, $user['password'])) {
+        die("Invalid password!");
+    }
+
+    // 4) Login success → set session
+    $_SESSION['user_id']    = $user['id'];
+    $_SESSION['username']   = $user['username'];
+    $_SESSION['company_id'] = $company['id'];
+
+    // 5) Redirect to dashboard
+    header("Location: /resources/dashboard.php");
+    exit;
 }
